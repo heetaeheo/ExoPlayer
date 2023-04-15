@@ -21,9 +21,11 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.media3.ui.PlayerView
 import com.example.exoplayer.ui.theme.ExoplayerTheme
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.awaitCancellation
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -39,18 +41,15 @@ class MainActivity : ComponentActivity() {
                         uri?.let(viewModel::addVideoUri)
                     }
                 )
-                var lifecycle by remember {
+                var currentLifecycleEvent by remember {
                     mutableStateOf(Lifecycle.Event.ON_CREATE)
                 }
                 val lifecycleOwner = LocalLifecycleOwner.current
-                DisposableEffect(lifecycleOwner) {
-                    val observer = LifecycleEventObserver { _, event ->
-                        lifecycle = event
-                    }
-                    lifecycleOwner.lifecycle.addObserver(observer)
-
-                    onDispose {
-                        lifecycleOwner.lifecycle.removeObserver(observer)
+                LaunchedEffect(lifecycleOwner) {
+                    lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                        currentLifecycleEvent = Lifecycle.Event.ON_RESUME
+                        awaitCancellation()
+                        currentLifecycleEvent = Lifecycle.Event.ON_PAUSE
                     }
                 }
 
@@ -65,14 +64,14 @@ class MainActivity : ComponentActivity() {
                                 it.player = viewModel.player
                             }
                         },
-                        update = {
-                            when (lifecycle) {
+                        update = { playerView ->
+                            when (currentLifecycleEvent) {
                                 Lifecycle.Event.ON_PAUSE -> {
-                                    it.onPause()
-                                    it.player?.pause()
+                                    playerView.onPause()
+                                    playerView.player?.pause()
                                 }
                                 Lifecycle.Event.ON_RESUME -> {
-                                    it.onResume()
+                                    playerView.onResume()
                                 }
                                 else -> Unit
                             }

@@ -32,14 +32,9 @@ class MainViewModel @Inject constructor(
         }
     }.stateIn(
         viewModelScope,
-        SharingStarted.WhileSubscribed(5000),
+        SharingStarted.WhileSubscribed(),
         emptyList()
     )
-
-
-    init {
-        player.prepare()
-    }
 
     fun addVideoUri(uri: Uri){
         savedStateHandle["videoUris"] = videoUris.value + uri
@@ -50,6 +45,7 @@ class MainViewModel @Inject constructor(
         player.setMediaItem(
             videoItems.value.find { it.contentUri == uri }?.mediaItem ?: return
         )
+        player.prepare()
     }
 
     override fun onCleared() {

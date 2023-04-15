@@ -11,8 +11,8 @@ import dagger.hilt.android.scopes.ViewModelScoped
 
 @Module
 @InstallIn(ViewModelComponent::class)
-class VideoPlayerModule {
-
+object VideoPlayerModule {
+// class -> object로 변경
     @Provides
     @ViewModelScoped
     fun provideVideoPlayer(app: Application): Player {
