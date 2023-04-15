@@ -3,6 +3,7 @@ package com.example.exoplayer
 import android.app.Application
 import android.net.Uri
 import android.provider.MediaStore
+import java.io.File
 
 data class MetaData(
     val fileName: String
@@ -14,10 +15,10 @@ interface MetaDataReader {
 
 class MetaDataReaderImpl(
     private val app: Application
-): MetaDataReader{
+) : MetaDataReader {
 
     override fun getMetaDataFromUri(contentUri: Uri): MetaData? {
-        if (contentUri.scheme !="content"){
+        if (contentUri.scheme != "content") {
             return null
         }
         val fileName = app.contentResolver
@@ -30,14 +31,16 @@ class MetaDataReaderImpl(
             )
             ?.use { cursor ->
                 val index = cursor.getColumnIndex(MediaStore.Video.VideoColumns.DISPLAY_NAME)
-                cursor.moveToFirst()
-                cursor.getString(index)
+                if (index == -1 || !cursor.moveToFirst()) {
+                    null
+                } else {
+                    cursor.getString(index)
+                }
             }
         return fileName?.let { fileName ->
             MetaData(
-                fileName = Uri.parse(fileName).lastPathSegment ?: return null
+                fileName = File(fileName).name ?: return null
             )
         }
     }
-
 }
